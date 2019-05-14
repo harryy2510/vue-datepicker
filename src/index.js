@@ -1,7 +1,7 @@
 import Component from './component.js';
 
 const Plugin = (Vue, params) => {
-  let name = 'flat-pickr';
+  let name = 'datepicker';
   /* istanbul ignore else */
   if (typeof params === 'string') name = params;
 

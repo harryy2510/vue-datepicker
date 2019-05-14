@@ -1,190 +1,139 @@
 import Flatpickr from 'flatpickr';
-import {excludedEvents, includedEvents} from "./events.js";
-import {arrayify, camelToKebab, cloneObject} from "./util.js";
-// You have to import css yourself
+import 'flatpickr/dist/flatpickr.min.css';
+import 'wenk/dist/wenk.css';
+import './datepicker.css';
+import './tooltip.css';
+import {cloneDeep, find, forEach, kebabCase} from 'lodash'
+import moment from "moment";
 
-// Keep a copy of all events for later use
-const allEvents = includedEvents.concat(excludedEvents);
+const eventsToEmit = [
+  'onChange',
+  'onClose',
+  'onDestroy',
+  'onMonthChange',
+  'onOpen',
+  'onYearChange',
+];
 
-// Passing these properties in `set()` method will cause flatpickr to trigger some callbacks
-const configCallbacks = ['locale', 'showMonths'];
+const coerceArray = (val) => {
+  return Array.isArray(coerceArray) ? val : [val];
+};
+
+const config = {
+  inline: true,
+  wrap: false,
+  defaultDate: null,
+  disable: [
+    (date) => moment(date).isBefore(moment().startOf('d'))
+  ]
+};
 
 export default {
-  name: 'flat-pickr',
+  name: 'datepicker',
   render(el) {
-    return el('input', {
-      attrs: {
-        type: 'text',
-        'data-input': true,
-      },
+    return el('span', {
       props: {
         disabled: this.disabled
-      },
-      on: {
-        input: this.onInput
       }
     })
   },
   props: {
-    value: {
-      default: null,
-      required: true,
-      validator(value) {
-        return value === null || value instanceof Date || typeof value === 'string' || value instanceof String || value instanceof Array || typeof value === 'number'
-      }
-    },
-    // https://chmln.github.io/flatpickr/options/
     config: {
       type: Object,
-      default: () => ({
-        wrap: false,
-        defaultDate: null,
-      })
+      default: () => config
     },
     events: {
       type: Array,
-      default: () => includedEvents
+      default: () => eventsToEmit
     },
-    disabled: {
-      type: Boolean,
-      default: false
+    available: {
+      type: Array,
+      default: () => []
+    },
+    partial: {
+      type: Array,
+      default: () => []
+    },
+    unavailable: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
     return {
-      /**
-       * The flatpickr instance
-       */
       fp: null,
     };
   },
   mounted() {
-    // Return early if flatpickr is already loaded
-    /* istanbul ignore if */
     if (this.fp) return;
-
-    // Don't mutate original object on parent component
-    let safeConfig = cloneObject(this.config);
-
-    // Inject our methods into events array
-    this.events.forEach((hook) => {
-      safeConfig[hook] = arrayify(safeConfig[hook] || []).concat((...args) => {
-        this.$emit(camelToKebab(hook), ...args)
-      });
+    let config = cloneDeep(this.config);
+    forEach(this.events, event => {
+      config[event] = [
+        ...(config[event] || []),
+        ...([(...args) => this.$emit(kebabCase(event), ...args)])
+      ]
     });
+    config.onDayCreate = [
+      ...(config.onDayCreate || []),
+      ...([(dObj, dStr, fp, dayElem) => {
+        const date = moment(dayElem.dateObj).startOf('d');
+        let className = '';
+        let tooltip = '';
 
-    // Set initial date without emitting any event
-    safeConfig.defaultDate = this.value || safeConfig.defaultDate;
-
-    // Init flatpickr
-    this.fp = new Flatpickr(this.getElem(), safeConfig);
-
-    // Attach blur event
-    this.fpInput().addEventListener('blur', this.onBlur);
-
-    // Immediate watch will fail before fp is set,
-    // so need to start watching after mount
-    this.$watch('disabled', this.watchDisabled, {immediate: true})
+        forEach(['available', 'partial', 'unavailable'], key => {
+          const v = find(this[key], _d => date.isSame(moment(_d.date).startOf('d')));
+          if (v) {
+            className = key;
+            tooltip = `${v.value}`;
+          }
+        });
+        if (className) {
+          dayElem.classList.add(className)
+        }
+        if (tooltip) {
+          dayElem.setAttribute('data-wenk', tooltip)
+        }
+      }])
+    ];
+    this.fp = new Flatpickr(this.getElem(), config);
   },
   methods: {
-    /**
-     * Get the HTML node where flatpickr to be attached
-     * Bind on parent element if wrap is true
-     */
     getElem() {
       return this.config.wrap ? this.$el.parentNode : this.$el
     },
-
-    /**
-     * Watch for value changed by date-picker itself and notify parent component
-     *
-     * @param event
-     */
-    onInput(event) {
-      // Lets wait for DOM to be updated
-      this.$nextTick(() => {
-        this.$emit('input', event.target.value);
-      });
+  },
+  watch: {
+    config: {
+      deep: true,
+      handler() {
+        this.fp.redraw();
+      }
     },
-
-    /**
-     * @return HTMLElement
-     */
-    fpInput() {
-      return this.fp.altInput || this.fp.input;
+    partial: {
+      deep: true,
+      handler() {
+        this.fp.redraw();
+      }
     },
-
-    /**
-     * Blur event is required by many validation libraries
-     *
-     * @param event
-     */
-    onBlur(event) {
-      this.$emit('blur', event.target.value);
+    unavailable: {
+      deep: true,
+      handler() {
+        this.fp.redraw();
+      }
     },
-
-    /**
-     * Watch for the disabled property and sets the value to the real input.
-     *
-     * @param newState
-     */
-    watchDisabled(newState) {
-      if (newState) {
-        this.fpInput().setAttribute('disabled', newState);
-      } else {
-        this.fpInput().removeAttribute('disabled');
+    available: {
+      deep: true,
+      handler(newConfig) {
+        let config = cloneDeep(newConfig);
+        eventsToEmit.forEach((hook) => {
+          delete config[hook];
+        });
+        this.fp.set(config);
       }
     }
   },
-  watch: {
-    /**
-     * Watch for any config changes and redraw date-picker
-     *
-     * @param newConfig Object
-     */
-    config: {
-      deep: true,
-      handler(newConfig) {
-        let safeConfig = cloneObject(newConfig);
-        // Workaround: Don't pass hooks to configs again otherwise
-        // previously registered hooks will stop working
-        // Notice: we are looping through all events
-        // This also means that new callbacks can not passed once component has been initialized
-        allEvents.forEach((hook) => {
-          delete safeConfig[hook];
-        });
-        this.fp.set(safeConfig);
-
-        // Workaround: Allow to change locale dynamically
-        configCallbacks.forEach((name) => {
-          if (typeof safeConfig[name] !== 'undefined') {
-            this.fp.set(name, safeConfig[name])
-          }
-        });
-      }
-    },
-
-    /**
-     * Watch for changes from parent component and update DOM
-     *
-     * @param newValue
-     */
-    value(newValue) {
-      // Prevent updates if v-model value is same as input's current value
-      if (newValue === this.$el.value) return;
-      // Make sure we have a flatpickr instance
-      this.fp &&
-      // Notify flatpickr instance that there is a change in value
-      this.fp.setDate(newValue, true);
-    },
-  },
-  /**
-   * Free up memory
-   */
   beforeDestroy() {
-    /* istanbul ignore else */
     if (this.fp) {
-      this.fpInput().removeEventListener('blur', this.onBlur);
       this.fp.destroy();
       this.fp = null;
     }

@@ -1,30 +1,29 @@
 {
-  "name": "vue-flatpickr-component",
-  "version": "8.1.2",
-  "description": "Vue.js component for Flatpickr date-time picker",
-  "main": "dist/vue-flatpickr.js",
-  "browser": "dist/vue-flatpickr.min.js",
+  "name": "@harryy/vue-datepicker",
+  "version": "0.0.1",
+  "description": "Vue.js component for Flatpickr",
+  "main": "dist/vue-datepicker.js",
+  "browser": "dist/vue-datepicker.min.js",
   "files": [
     "src",
     "dist"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ankurk91/vue-flatpickr-component.git"
+    "url": "git+https://github.com/harryy2510/vue-datepicker.git"
   },
   "keywords": [
     "vue",
     "flatpickr",
-    "vue-flatpickr",
-    "datepicker",
-    "timepicker"
+    "vue-datepicker",
+    "datepicker"
   ],
   "author": "ankurk91",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ankurk91/vue-flatpickr-component/issues"
+    "url": "https://github.com/harryy2510/vue-datepicker/issues"
   },
-  "homepage": "https://github.com/ankurk91/vue-flatpickr-component",
+  "homepage": "https://github.com/harryy2510/vue-datepicker",
   "scripts": {
     "test": "jest",
     "test:watch": "yarn run test --watch --notify",
@@ -35,7 +34,12 @@
     "prepublishOnly": "yarn run test && yarn run build"
   },
   "dependencies": {
-    "flatpickr": "^4.5.1"
+    "flatpickr": "^4.5.1",
+    "lodash": "4.17.11",
+    "moment": "2.24.0",
+    "popper": "1.0.1",
+    "tippy.js": "4.3.1",
+    "wenk": "1.0.8"
   },
   "devDependencies": {
     "@babel/core": "^7.2.2",
@@ -54,7 +58,6 @@
     "mini-css-extract-plugin": "^0.5.0",
     "style-loader": "^0.23.1",
     "unminified-webpack-plugin": "^2.0.0",
-    "vee-validate": "^2.1.7",
     "vue": "^2.6.4",
     "vue-loader": "^15.6.2",
     "vue-template-compiler": "^2.6.4",

@@ -1,0 +1,38 @@
+.flatpickr-day:not(.disabled) {
+  color: #393939;
+}
+
+.flatpickr-day.nextMonthDay {
+  opacity: 0.4;
+}
+
+.flatpickr-day,
+.flatpickr-day:focus,
+.flatpickr-day.selected,
+.flatpickr-day.today,
+.flatpickr-day:focus.today,
+.flatpickr-day.today.selected {
+  background-color: transparent;
+  border: none;
+  color: #393939;
+}
+
+.flatpickr-day:hover.today,
+.flatpickr-day:hover.today.selected,
+.flatpickr-day:hover,
+.flatpickr-day:hover.selected {
+  background-color: #e6e6e6;
+  color: #393939;
+}
+
+.flatpickr-day:not(.disabled).available {
+  color: #27ae60;
+}
+
+.flatpickr-day:not(.disabled).partial {
+  color: #e67e22;
+}
+
+.flatpickr-day:not(.disabled).unavailable {
+  color: #c0392b;
+}

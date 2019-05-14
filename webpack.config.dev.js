@@ -75,7 +75,6 @@ module.exports = {
 
     ]
   },
-  // https://gist.github.com/sokra/1522d586b8e5c0f5072d7565c2bee693
   optimization: {
     runtimeChunk: false,
     splitChunks: {
